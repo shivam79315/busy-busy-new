@@ -140,7 +140,7 @@ export default function ProductsPage() {
                 key={category}
                 type="button"
                 variant={activeCategory === category ? "default" : "outline"}
-                className="rounded-full capitalize"
+                className="rounded-full capitalize cursor-pointer"
                 onClick={() => setActiveCategory(category)}
                 data-testid={`products-category-${category}`}
               >
