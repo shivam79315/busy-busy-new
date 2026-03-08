@@ -1,0 +1,204 @@
+.hero-fade-up {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: heroFadeUp 0.8s ease-out forwards;
+}
+
+.hero-fade-up.delay-1 {
+  animation-delay: 0.12s;
+}
+
+.hero-fade-up.delay-2 {
+  animation-delay: 0.24s;
+}
+
+.hero-fade-up.delay-3 {
+  animation-delay: 0.36s;
+}
+
+.card-rise {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: cardRise 0.65s ease-out forwards;
+}
+
+.detail-page-enter {
+  opacity: 0;
+  transform: translateY(24px) scale(0.985);
+  animation: detailPageEnter 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.detail-image-enter {
+  opacity: 0;
+  transform: translateX(-18px) scale(0.98);
+  animation: detailImageEnter 0.85s ease-out 0.18s forwards;
+}
+
+.detail-content-enter {
+  opacity: 0;
+  transform: translateX(18px);
+  animation: detailContentEnter 0.85s ease-out 0.24s forwards;
+}
+
+.home-stat-pop {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: homeStatPop 0.7s ease-out forwards;
+}
+
+.home-glow-hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.home-glow-hover:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 40px rgba(21, 128, 61, 0.17);
+}
+
+.float-gentle {
+  animation: floatGentle 5.2s ease-in-out infinite;
+}
+
+.pulse-soft {
+  animation: pulseSoft 2.4s ease-in-out infinite;
+}
+
+.detail-gallery-image-enter {
+  opacity: 0;
+  transform: scale(1.03);
+  animation: detailGalleryImageEnter 0.55s ease-out forwards;
+}
+
+.detail-section-enter {
+  opacity: 0;
+  transform: translateY(16px);
+  animation: detailSectionEnter 0.75s ease-out forwards;
+}
+
+.home-section-reveal {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: homeSectionReveal 0.75s ease-out forwards;
+}
+
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes cardRise {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes detailPageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes detailImageEnter {
+  from {
+    opacity: 0;
+    transform: translateX(-18px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes detailContentEnter {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes homeStatPop {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatGentle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+@keyframes pulseSoft {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 0.88;
+  }
+}
+
+@keyframes detailGalleryImageEnter {
+  from {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes detailSectionEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes homeSectionReveal {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
