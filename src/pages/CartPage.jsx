@@ -6,6 +6,9 @@ import { Button } from "../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Textarea } from "../components/ui/textarea";
 import { getErrorMessage } from "../lib/error-message";
+import { getAuth } from "firebase/auth";
+import { fetchUserCart } from "@/hooks/useCart";
+import { fetchProducts } from "@/api/products";
 import {
   getLocalCart,
   placeLocalOrder,
@@ -22,9 +25,41 @@ export default function CartPage() {
 
   const fetchCart = async () => {
     setIsLoading(true);
+
     try {
-      const data = await getLocalCart();
-      setCart(data);
+      const uid = getAuth().currentUser.uid;
+
+      const cartItems = await fetchUserCart(uid);
+      const products = await fetchProducts();
+
+      const enrichedItems = cartItems.map((cartItem) => {
+        const product = products.find(
+          (p) => p.productId === cartItem.productId
+        );
+
+        const price = product?.price || 0;
+        const quantity = cartItem.quantity || 1;
+
+        return {
+          product_id: cartItem.productId,
+          name: product?.title,
+          image_url: product?.image,
+          price,
+          quantity,
+          line_total: price * quantity
+        };
+      });
+
+      const subtotal = enrichedItems.reduce(
+        (sum, item) => sum + item.line_total,
+        0
+      );
+
+      setCart({
+        items: enrichedItems,
+        subtotal
+      });
+
     } catch (error) {
       toast.error(getErrorMessage(error, "Unable to load cart."));
     } finally {

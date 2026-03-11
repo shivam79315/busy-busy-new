@@ -2,23 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { getAuth } from "firebase/auth";
 import { ProductCard } from "../components/products/ProductCard";
 import { Button } from "../components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
 import { useAuth } from "../context/AuthContext";
 import { getErrorMessage } from "../lib/error-message";
-import {
-  BRAND_FILTER_OPTIONS,
-  DISCOUNT_FILTER_OPTIONS,
-  TAG_FILTER_OPTIONS,
-} from "../lib/product-ui-data";
 import { useProducts } from "../hooks/useProducts";
-import {
-  addLocalCartItem,
-  addLocalWishlistItem
-} from "../lib/store-service";
-
-const categoryOptions = ["all", "audio", "footwear", "watches", "skincare"];
+import { addLocalWishlistItem } from "../lib/store-service";
+import { handleAddToCart } from "@/lib/cart.service";
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -54,8 +46,33 @@ export default function ProductsPage() {
     }
   }, [data, error, searchTerm]);
 
+  const categoryOptions = useMemo(() => {
+    const categories = new Set(products.map((p) => p.category));
+    return ["all", ...categories];
+  }, [products]);
+
+  const discountOptions = useMemo(() => {
+    if (!products.length) {
+      return [{ id: "all", label: "All discounts", min: 0, max: 100 }];
+    }
+
+    const discounts = products
+      .map((p) => p.discount || 0)
+      .filter((d) => d > 0);
+
+    const maxDiscount = Math.max(...discounts);
+
+    return [
+      { id: "all", label: "All discounts", min: 0, max: maxDiscount },
+      { id: "under-15", label: "Under 15%", min: 0, max: 14 },
+      { id: "15-25", label: "15% - 25%", min: 15, max: 25 },
+      { id: "26-35", label: "26% - 35%", min: 26, max: 35 },
+      { id: "36-plus", label: "36%+", min: 36, max: 100 },
+    ];
+  }, [products]);
+
   const filteredProducts = useMemo(() => {
-    const selectedDiscount = DISCOUNT_FILTER_OPTIONS.find((option) => option.id === activeDiscount) || DISCOUNT_FILTER_OPTIONS[0];
+    const selectedDiscount = discountOptions.find((option) => option.id === activeDiscount) || discountOptions[0];
 
     return products.filter((product) => {
       if (activeCategory !== "all" && product.category !== activeCategory) {
@@ -83,6 +100,26 @@ export default function ProductsPage() {
       return true;
     });
   }, [products, activeBrand, activeCategory, activeDiscount, activeTags]);
+
+  const brandOptions = useMemo(() => {
+    const brands = new Set();
+
+    products.forEach((product) => {
+      if (product.brand) {
+        brands.add(product.brand);
+      }
+    });
+
+    return ["all", ...Array.from(brands)];
+  }, [products]);
+
+  const tagOptions = useMemo(() => {
+    const tags = new Set(
+      products.flatMap((product) => product.tags || [])
+    );
+
+    return ["all", ...tags];
+  }, [products]);
 
   const hiddenFiltersCount =
     (activeBrand !== "all" ? 1 : 0) +
@@ -115,12 +152,13 @@ export default function ProductsPage() {
     }
   };
 
-  const addToCart = async (productId) => {
-    await withAuthGuard(async () => {
-      await addLocalCartItem({ product_id: productId, quantity: 1 });
-      toast.success("Added to cart.");
-    }, "Unable to add item to cart.");
-  };
+  const addToCart = (productId) =>
+    handleAddToCart({
+      productId,
+      isAuthenticated,
+      navigate,
+      redirectTo: "/products"
+  });
 
   const addToWishlist = async (productId) => {
     await withAuthGuard(async () => {
@@ -144,7 +182,7 @@ export default function ProductsPage() {
                 key={category}
                 type="button"
                 variant={activeCategory === category ? "default" : "outline"}
-                className="rounded-full capitalize cursor-pointer"
+                className="rounded-full cursor-pointer capitalize cursor-pointer"
                 onClick={() => setActiveCategory(category)}
                 data-testid={`products-category-${category}`}
               >
@@ -158,7 +196,7 @@ export default function ProductsPage() {
               <Button
                 type="button"
                 variant="outline"
-                className="rounded-full border-primary/40 bg-card/70 backdrop-blur-md"
+                className="rounded-full cursor-pointer border-primary/40 bg-card/70 backdrop-blur-md"
                 data-testid="products-show-hidden-filters-button"
               >
                 <SlidersHorizontal className="mr-2 h-4 w-4" />
@@ -182,16 +220,16 @@ export default function ProductsPage() {
                     <Sparkles className="h-4 w-4 text-primary" />
                     Advanced filters
                   </p>
-                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setFilterPopoverOpen(false)} data-testid="products-hidden-filters-close-button">
+                  <Button type="button" variant="ghost" size="icon" className="h-8 w-8 cursor-pointer rounded-full" onClick={() => setFilterPopoverOpen(false)} data-testid="products-hidden-filters-close-button">
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 border-b border-border/60 bg-card/95 px-5 py-3" data-testid="products-hidden-filters-actions">
-                  <Button type="button" variant="outline" className="rounded-full" onClick={clearHiddenFilters} data-testid="products-clear-hidden-filters-button">
+                  <Button type="button" variant="outline" className="rounded-full cursor-pointer" onClick={clearHiddenFilters} data-testid="products-clear-hidden-filters-button">
                     Clear all
                   </Button>
-                  <Button type="button" className="rounded-full" onClick={() => setFilterPopoverOpen(false)} data-testid="products-apply-hidden-filters-button">
+                  <Button type="button" className="rounded-full cursor-pointer" onClick={() => setFilterPopoverOpen(false)} data-testid="products-apply-hidden-filters-button">
                     Apply
                   </Button>
                 </div>
@@ -200,12 +238,12 @@ export default function ProductsPage() {
                   <div className="space-y-2" data-testid="products-brand-filter-section">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground" data-testid="products-brand-filter-title">Brand</p>
                     <div className="flex flex-wrap gap-2" data-testid="products-brand-filter-options">
-                      {BRAND_FILTER_OPTIONS.map((brand) => (
+                      {brandOptions.map((brand) => (
                         <Button
                           key={brand}
                           type="button"
                           variant={activeBrand === brand ? "default" : "outline"}
-                          className="h-8 rounded-full px-3 text-xs"
+                          className="h-8 rounded-full cursor-pointer px-3 text-xs"
                           onClick={() => setActiveBrand(brand)}
                           data-testid={`products-brand-filter-${brand.toLowerCase().replace(/\s+/g, "-")}`}
                         >
@@ -218,12 +256,12 @@ export default function ProductsPage() {
                   <div className="space-y-2" data-testid="products-discount-filter-section">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground" data-testid="products-discount-filter-title">Discount</p>
                     <div className="flex flex-wrap gap-2" data-testid="products-discount-filter-options">
-                      {DISCOUNT_FILTER_OPTIONS.map((discountOption) => (
+                      {discountOptions.map((discountOption) => (
                         <Button
                           key={discountOption.id}
                           type="button"
                           variant={activeDiscount === discountOption.id ? "default" : "outline"}
-                          className="h-8 rounded-full px-3 text-xs"
+                          className="h-8 rounded-full cursor-pointer px-3 text-xs"
                           onClick={() => setActiveDiscount(discountOption.id)}
                           data-testid={`products-discount-filter-${discountOption.id}`}
                         >
@@ -236,7 +274,7 @@ export default function ProductsPage() {
                   <div className="space-y-2 pb-1" data-testid="products-tags-filter-section">
                     <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground" data-testid="products-tags-filter-title">Tags</p>
                     <div className="flex flex-wrap gap-2" data-testid="products-tags-filter-options">
-                      {TAG_FILTER_OPTIONS.map((tag) => {
+                      {tagOptions.map((tag) => {
                         const tagId = tag.toLowerCase().replace(/\s+/g, "-");
                         const isSelected = activeTags.includes(tag);
                         return (
@@ -244,7 +282,7 @@ export default function ProductsPage() {
                             key={tag}
                             type="button"
                             variant={isSelected ? "default" : "outline"}
-                            className="h-8 rounded-full px-3 text-xs capitalize"
+                            className="h-8 rounded-full cursor-pointer px-3 text-xs capitalize"
                             onClick={() => toggleTagFilter(tag)}
                             data-testid={`products-tag-filter-${tagId}`}
                           >
@@ -274,7 +312,7 @@ export default function ProductsPage() {
           ) : null}
           {activeDiscount !== "all" ? (
             <span className="rounded-full border border-border/70 bg-background/60 px-3 py-1 text-xs" data-testid="products-active-discount-chip">
-              Discount: {(DISCOUNT_FILTER_OPTIONS.find((item) => item.id === activeDiscount) || DISCOUNT_FILTER_OPTIONS[0]).label}
+              Discount: {(discountOptions.find((item) => item.id === activeDiscount) || discountOptions[0]).label}
             </span>
           ) : null}
           {activeTags.map((tag) => (

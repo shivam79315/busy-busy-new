@@ -8,9 +8,10 @@ import {
   Star,
   Truck,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
+import useEmblaCarousel from "embla-carousel-react";
 import {
   Accordion,
   AccordionContent,
@@ -22,17 +23,15 @@ import { Card, CardContent } from "../components/ui/card";
 import { useAuth } from "../context/AuthContext";
 import { getErrorMessage } from "../lib/error-message";
 import {
-  addLocalCartItem,
   addLocalWishlistItem
 } from "../lib/store-service";
 import { useProduct, useRelatedProducts } from "@/hooks/useProducts";
+import { handleAddToCart } from "@/lib/cart.service.js";
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
 
   const { data: product, isLoading, error } = useProduct(productId);
-
-  console.log(product);
   const { data: relatedProducts } = useRelatedProducts(product?.category);
   const filteredRelated =
   relatedProducts?.filter(p => p.productId !== product.productId).slice(0,4) || [];
@@ -42,6 +41,7 @@ export default function ProductDetailPage() {
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedVariants, setSelectedVariants] = useState({});
+  const [hiddenImages, setHiddenImages] = useState(new Set());
 
   useEffect(() => {
     if (!product) return;
@@ -66,12 +66,12 @@ export default function ProductDetailPage() {
     ];
   }, [product]);
 
-  const currentGalleryImage = useMemo(() => {
-    if (!product) {
-      return "";
-    }
-    return product.galleryImages[activeImageIndex] || product.galleryImages[0];
-  }, [product, activeImageIndex]);
+  const visibleImages = useMemo(() => {
+    if (!product?.galleryImages) return [];
+    return product.galleryImages.filter(
+      (img) => img && !hiddenImages.has(img)
+    );
+  }, [product, hiddenImages]);
 
   const guardedAction = async (handler, fallbackError) => {
     if (!isAuthenticated) {
@@ -90,12 +90,13 @@ export default function ProductDetailPage() {
     }
   };
 
-  const addToCart = async () => {
-    await guardedAction(async () => {
-      await addLocalCartItem({ product_id: product.id, quantity: 1 });
-      toast.success("Added to cart.");
-    }, "Unable to add product to cart.");
-  };
+  const addToCart = () =>
+    handleAddToCart({
+      productId: product.productId,
+      isAuthenticated,
+      navigate,
+      redirectTo: `/products/${product.productId}`
+    });
 
   const addToWishlist = async () => {
     await guardedAction(async () => {
@@ -104,21 +105,19 @@ export default function ProductDetailPage() {
     }, "Unable to add product to wishlist.");
   };
 
-  const goToNextImage = () => {
-    if (!product?.galleryImages?.length) {
-      return;
-    }
-    setActiveImageIndex((previousIndex) => (previousIndex + 1) % product.galleryImages.length);
-  };
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: true,
+    dragFree: false,
+    align: "center"
+  });
 
-  const goToPreviousImage = () => {
-    if (!product?.galleryImages?.length) {
-      return;
-    }
-    setActiveImageIndex((previousIndex) =>
-      previousIndex === 0 ? product.galleryImages.length - 1 : previousIndex - 1,
-    );
-  };
+  const scrollPrev = useCallback(() => {
+    if (emblaApi) emblaApi.scrollPrev();
+  }, [emblaApi]);
+
+  const scrollNext = useCallback(() => {
+    if (emblaApi) emblaApi.scrollNext();
+  }, [emblaApi]);
 
   const selectVariantOption = (variantName, option) => {
     setSelectedVariants((previousVariants) => ({
@@ -146,7 +145,7 @@ export default function ProductDetailPage() {
   return (
     <div className="space-y-10" data-testid="product-detail-page">
       <div className="flex flex-wrap items-center gap-3" data-testid="product-detail-breadcrumb">
-        <Button asChild variant="outline" className="rounded-full" data-testid="product-detail-back-button">
+        <Button asChild variant="outline" className="cursor-pointer rounded-full" data-testid="product-detail-back-button">
           <Link to="/products">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to products
@@ -156,40 +155,69 @@ export default function ProductDetailPage() {
 
       <section className="detail-page-enter overflow-hidden rounded-[2rem] border border-border/60 bg-card/75 p-4 shadow-xl shadow-primary/10 backdrop-blur-md md:p-7" data-testid="product-detail-main-card">
         <div className="grid grid-cols-1 gap-7 lg:grid-cols-2" data-testid="product-detail-main-grid">
-          <div className="detail-image-enter relative overflow-hidden rounded-[1.5rem] bg-secondary/40" data-testid="product-detail-image-wrapper">
-            <div className="absolute inset-y-0 left-3 z-10 flex items-center" data-testid="product-detail-image-prev-control-wrapper">
-              <Button type="button" variant="outline" size="icon" className="h-9 w-9 rounded-full bg-background/80" onClick={goToPreviousImage} data-testid="product-detail-image-prev-button">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+          <div
+            className="detail-image-enter relative overflow-hidden rounded-[1.5rem] bg-secondary/40"
+            data-testid="product-detail-image-wrapper"
+          >
+            {/* Embla viewport */}
+            <div className="overflow-hidden h-[540px]" ref={emblaRef}>
+              <div className="flex h-full">
+                {visibleImages.map((img, index) => (
+                  <div key={img} className="min-w-0 flex-[0_0_100%] h-full">
+                    <img
+                      src={img}
+                      alt={`${product.title} ${index + 1}`}
+                      className="h-full w-full object-cover object-center"
+                      onError={() => {
+                        setHiddenImages((prev) => new Set(prev).add(img));
+                        emblaApi?.scrollNext();
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <img
-              key={currentGalleryImage}
-              src={currentGalleryImage}
-              alt={product.title}
-              className="detail-gallery-image-enter h-full w-full max-h-[540px] object-cover object-center"
-              data-testid="product-detail-image"
-            />
-            <div className="absolute inset-y-0 right-3 z-10 flex items-center" data-testid="product-detail-image-next-control-wrapper">
-              <Button type="button" variant="outline" size="icon" className="h-9 w-9 rounded-full bg-background/80" onClick={goToNextImage} data-testid="product-detail-image-next-button">
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            <span className="absolute left-4 top-4 rounded-full border border-border/60 bg-background/80 px-3 py-1 text-xs font-medium capitalize" data-testid="product-detail-badge">
+
+            {/* LEFT BUTTON */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute left-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-background/80"
+              onClick={scrollPrev}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+
+            {/* RIGHT BUTTON */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="absolute right-3 top-1/2 z-10 -translate-y-1/2 cursor-pointer rounded-full bg-background/80"
+              onClick={scrollNext}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+
+            {/* Badge */}
+            <span className="absolute left-4 top-4 rounded-full border border-border/60 bg-background/80 px-3 py-1 text-xs font-medium capitalize">
               {product.badge}
             </span>
 
-            <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto" data-testid="product-detail-image-thumbnails">
-              {product.galleryImages.map((image, imageIndex) => (
+            {/* Thumbnails */}
+            <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto">
+              {visibleImages.map((img, index) => (
                 <button
-                  key={image}
-                  type="button"
-                  className={`h-14 w-14 shrink-0 overflow-hidden rounded-xl border transition-colors duration-300 ${
-                    imageIndex === activeImageIndex ? "border-primary" : "border-border/60"
-                  }`}
-                  onClick={() => setActiveImageIndex(imageIndex)}
-                  data-testid={`product-detail-thumbnail-${imageIndex}`}
+                  key={img}
+                  className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-border/60"
+                  onClick={() => emblaApi?.scrollTo(index)}
                 >
-                  <img src={image} alt={`${product.title} view ${imageIndex + 1}`} className="h-full w-full object-cover object-center" data-testid={`product-detail-thumbnail-image-${imageIndex}`} />
+                  <img
+                    src={img}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.parentElement.style.display = "none";
+                    }}
+                  />
                 </button>
               ))}
             </div>

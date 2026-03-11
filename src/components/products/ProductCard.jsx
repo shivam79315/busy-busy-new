@@ -33,9 +33,11 @@ export const ProductCard = ({ product, index, onAddToCart, onAddToWishlist }) =>
             <span className="rounded-full border border-border/60 bg-background/60 px-2.5 py-1 text-xs text-muted-foreground" data-testid={`product-brand-${product.productId}`}>
               {product.brand || "CoreLine"}
             </span>
-            <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary" data-testid={`product-discount-${product.productId}`}>
-              {product.discount || 0}% off
-            </span>
+            {product.discount > 0 && (
+              <span className="rounded-full border border-primary/40 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                {product.discount}% off
+              </span>
+            )}
           </div>
         </div>
 
@@ -48,15 +50,15 @@ export const ProductCard = ({ product, index, onAddToCart, onAddToWishlist }) =>
         </div>
 
         <div className="grid grid-cols-[1fr_auto] gap-2">
-          <Button className="h-10 rounded-full" onClick={() => onAddToCart(product.productId)} data-testid={`product-add-cart-${product.productId}`}>
+          <Button className="h-10 cursor-pointer rounded-full" onClick={() => onAddToCart(product.productId)} data-testid={`product-add-cart-${product.productId}`}>
             <ShoppingCart className="mr-1 h-4 w-4" />
             Add to Cart
           </Button>
-          <Button variant="outline" size="icon" className="h-10 w-10 rounded-full" onClick={() => onAddToWishlist(product.productId)} data-testid={`product-add-wishlist-${product.productId}`}>
+          <Button variant="outline" size="icon" className="h-10 w-10 cursor-pointer rounded-full" onClick={() => onAddToWishlist(product.productId)} data-testid={`product-add-wishlist-${product.productId}`}>
             <Heart className="h-4 w-4" />
           </Button>
 
-          <Button asChild variant="outline" className="h-10 rounded-full col-span-2" data-testid={`product-view-details-${product.productId}`}>
+          <Button asChild variant="outline" className="h-10 cursor-pointer rounded-full col-span-2" data-testid={`product-view-details-${product.productId}`}>
             <Link to={`/products/${product.productId}`}>View details</Link>
           </Button>
         </div>
