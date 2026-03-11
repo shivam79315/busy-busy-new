@@ -161,7 +161,7 @@ export const PRODUCT_CATALOG = [
   },
 ];
 
-const PRODUCT_LIST_META = {
+export const PRODUCT_LIST_META = {
   "prod-audio-1": { brand: "Auraluxe", discount: 18, tags: ["noise-cancel", "premium", "travel"] },
   "prod-audio-2": { brand: "Auraluxe", discount: 12, tags: ["wireless", "compact", "everyday"] },
   "prod-audio-3": { brand: "NeoCore", discount: 22, tags: ["studio", "premium", "new"] },
@@ -187,7 +187,7 @@ const DEFAULT_META_BY_CATEGORY = {
   skincare: { brand: "DermaLeaf", discount: 14, tags: ["hydration", "clean"] },
 };
 
-const CATEGORY_GALLERY_IMAGES = {
+export const CATEGORY_GALLERY_IMAGES = {
   audio: [
     "https://images.unsplash.com/photo-1605170876472-db58e15c430e?q=85&w=1200&auto=format&fit=crop",
     "https://images.unsplash.com/photo-1546435770-a3e426bf472b?q=85&w=1200&auto=format&fit=crop",
@@ -214,7 +214,7 @@ const CATEGORY_GALLERY_IMAGES = {
   ],
 };
 
-const CATEGORY_VARIANTS = {
+export const CATEGORY_VARIANTS = {
   audio: [
     { name: "Color", options: ["Graphite Black", "Pearl White", "Moss Green"] },
     { name: "Edition", options: ["Standard", "Pro Tuning", "Studio Pack"] },
@@ -233,7 +233,7 @@ const CATEGORY_VARIANTS = {
   ],
 };
 
-const CATEGORY_SPECIFICATIONS = {
+export const CATEGORY_SPECIFICATIONS = {
   audio: [
     { label: "Battery Life", value: "Up to 40 hours" },
     { label: "Connectivity", value: "Bluetooth 5.3, USB-C" },
@@ -260,7 +260,7 @@ const CATEGORY_SPECIFICATIONS = {
   ],
 };
 
-const CATEGORY_TECH_DETAILS = {
+export const CATEGORY_TECH_DETAILS = {
   audio: [
     { label: "Driver Unit", value: "40mm dynamic drivers" },
     { label: "Mic Setup", value: "Dual beamforming microphones" },
@@ -283,7 +283,7 @@ const CATEGORY_TECH_DETAILS = {
   ],
 };
 
-const CATEGORY_FAQS = {
+export const CATEGORY_FAQS = {
   audio: [
     { question: "Does it support dual-device connection?", answer: "Yes, you can connect two devices and switch seamlessly between calls and media." },
     { question: "Is fast charging available?", answer: "A 10-minute charge delivers up to 3 hours of playback in most usage conditions." },
@@ -306,7 +306,7 @@ const CATEGORY_FAQS = {
   ],
 };
 
-const CATEGORY_REVIEWS = {
+export const CATEGORY_REVIEWS = {
   audio: [
     { rating: 5, title: "Crystal clear sound", body: "The soundstage is wide and calls are super clear even in noisy places.", author: "Aman T.", date: "2 days ago" },
     { rating: 4, title: "Great for flights", body: "ANC works really well and battery lasted my whole round trip.", author: "Rhea M.", date: "1 week ago" },
@@ -372,7 +372,7 @@ export const enrichProductForUi = (product) => {
 export const getProductDetailDemo = (product) => {
   const enrichedProduct = enrichProductForUi(product);
   const galleryPool = CATEGORY_GALLERY_IMAGES[product.category] || [];
-  const uniqueGallery = [product.image_url, ...galleryPool].filter((image, index, arr) => arr.indexOf(image) === index);
+  const uniqueGallery = [product.image, ...galleryPool].filter((image, index, arr) => arr.indexOf(image) === index);
   const variantGroups = CATEGORY_VARIANTS[product.category] || [];
   const specifications = CATEGORY_SPECIFICATIONS[product.category] || [];
   const technicalDetails = CATEGORY_TECH_DETAILS[product.category] || [];

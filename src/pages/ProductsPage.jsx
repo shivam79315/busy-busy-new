@@ -5,17 +5,17 @@ import { toast } from "sonner";
 import { ProductCard } from "../components/products/ProductCard";
 import { Button } from "../components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popover";
-import { useAuth } from "../lib/auth-context";
+import { useAuth } from "../context/AuthContext";
 import { getErrorMessage } from "../lib/error-message";
 import {
   BRAND_FILTER_OPTIONS,
   DISCOUNT_FILTER_OPTIONS,
   TAG_FILTER_OPTIONS,
 } from "../lib/product-ui-data";
+import { useProducts } from "../hooks/useProducts";
 import {
   addLocalCartItem,
-  addLocalWishlistItem,
-  getLocalEnrichedProducts,
+  addLocalWishlistItem
 } from "../lib/store-service";
 
 const categoryOptions = ["all", "audio", "footwear", "watches", "skincare"];
@@ -24,8 +24,8 @@ export default function ProductsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated } = useAuth();
+  const { data, isLoading, error } = useProducts();
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeBrand, setActiveBrand] = useState("all");
   const [activeDiscount, setActiveDiscount] = useState("all");
@@ -35,20 +35,24 @@ export default function ProductsPage() {
   const searchTerm = useMemo(() => new URLSearchParams(location.search).get("search") || "", [location.search]);
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const data = await getLocalEnrichedProducts({ search: searchTerm });
-        setProducts(data || []);
-      } catch (error) {
-        toast.error(getErrorMessage(error, "Unable to load products."));
-      } finally {
-        setLoading(false);
-      }
-    };
+    if (error) {
+      toast.error(getErrorMessage(error, "Unable to load products."));
+      return;
+    }
 
-    fetchProducts();
-  }, [searchTerm]);
+    if (data) {
+      if (!searchTerm) {
+        setProducts(data);
+        return;
+      }
+
+      const filtered = data.filter((product) =>
+        product.title?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+      setProducts(filtered);
+    }
+  }, [data, error, searchTerm]);
 
   const filteredProducts = useMemo(() => {
     const selectedDiscount = DISCOUNT_FILTER_OPTIONS.find((option) => option.id === activeDiscount) || DISCOUNT_FILTER_OPTIONS[0];
@@ -281,7 +285,7 @@ export default function ProductsPage() {
         </div>
       </header>
 
-      {loading ? (
+      {isLoading  ? (
         <div className="rounded-2xl border border-border/60 bg-card/70 p-8 text-center" data-testid="products-loading-state">
           <p className="text-sm text-muted-foreground" data-testid="products-loading-text">Loading products...</p>
         </div>
@@ -293,7 +297,7 @@ export default function ProductsPage() {
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3" data-testid="products-grid">
           {filteredProducts.map((product, index) => (
             <ProductCard
-              key={product.id}
+              key={product.productId}
               product={product}
               index={index}
               onAddToCart={addToCart}

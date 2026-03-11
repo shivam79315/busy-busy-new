@@ -30,7 +30,7 @@ export const ThemeToggle = () => {
     <Button
       size="icon"
       variant="ghost"
-      className="relative h-10 w-10 rounded-full border border-border/70 bg-card/60 backdrop-blur-md hover:bg-accent/80"
+      className="relative h-10 w-10 cursor-pointer rounded-full border border-border/70 bg-card/60 backdrop-blur-md hover:bg-accent/80"
       onClick={toggleTheme}
       data-testid="theme-toggle-button"
       aria-label="Toggle light and dark theme"

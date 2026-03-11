@@ -19,73 +19,59 @@ import {
 } from "../components/ui/accordion";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-import { useAuth } from "../lib/auth-context";
+import { useAuth } from "../context/AuthContext";
 import { getErrorMessage } from "../lib/error-message";
-import { getProductDetailDemo } from "../lib/product-ui-data";
 import {
   addLocalCartItem,
-  addLocalWishlistItem,
-  getLocalProductById,
-  listLocalProductsByCategory,
+  addLocalWishlistItem
 } from "../lib/store-service";
+import { useProduct, useRelatedProducts } from "@/hooks/useProducts";
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
+
+  const { data: product, isLoading, error } = useProduct(productId);
+
+  console.log(product);
+  const { data: relatedProducts } = useRelatedProducts(product?.category);
+  const filteredRelated =
+  relatedProducts?.filter(p => p.productId !== product.productId).slice(0,4) || [];
+
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const [product, setProduct] = useState(null);
-  const [productDemo, setProductDemo] = useState(null);
-  const [relatedProducts, setRelatedProducts] = useState([]);
+
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedVariants, setSelectedVariants] = useState({});
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProductData = async () => {
-      setLoading(true);
-      try {
-        const data = await getLocalProductById(productId);
-        setProduct(data);
-        const demoPayload = getProductDetailDemo(data);
-        setProductDemo(demoPayload);
-        setActiveImageIndex(0);
-        setSelectedVariants(
-          (demoPayload.variantGroups || []).reduce((accumulator, group) => {
-            accumulator[group.name] = group.options[0];
-            return accumulator;
-          }, {}),
-        );
+    if (!product) return;
 
-        const relatedProductsByCategory = await listLocalProductsByCategory(data.category);
-        const filtered = (relatedProductsByCategory || []).filter((item) => item.id !== data.id).slice(0, 4);
-        setRelatedProducts(filtered);
-      } catch (error) {
-        toast.error(getErrorMessage(error, "Unable to load product details."));
-        navigate("/products");
-      } finally {
-        setLoading(false);
-      }
-    };
+    setActiveImageIndex(0);
 
-    fetchProductData();
-  }, [productId, navigate]);
+    setSelectedVariants(
+      (product.variantGroups || []).reduce((acc, group) => {
+        acc[group.name] = group.options[0];
+        return acc;
+      }, {})
+    );
+  }, [product]);
 
   const detailTags = useMemo(() => {
-    if (!productDemo) return [];
+    if (!product) return [];
     return [
-      productDemo.category,
-      productDemo.brand,
-      `${productDemo.discount}% off`,
-      `Rating ${productDemo.rating}`,
+      product.category,
+      product.brand,
+      `${product.discount}% off`,
+      `Rating ${product.rating}`,
     ];
-  }, [productDemo]);
+  }, [product]);
 
   const currentGalleryImage = useMemo(() => {
-    if (!productDemo) {
+    if (!product) {
       return "";
     }
-    return productDemo.galleryImages[activeImageIndex] || productDemo.galleryImages[0];
-  }, [productDemo, activeImageIndex]);
+    return product.galleryImages[activeImageIndex] || product.galleryImages[0];
+  }, [product, activeImageIndex]);
 
   const guardedAction = async (handler, fallbackError) => {
     if (!isAuthenticated) {
@@ -97,7 +83,10 @@ export default function ProductDetailPage() {
     try {
       await handler();
     } catch (error) {
-      toast.error(getErrorMessage(error, fallbackError));
+      if (error) {
+        toast.error(getErrorMessage(error, "Unable to load product."));
+        navigate("/products");
+      }
     }
   };
 
@@ -116,18 +105,18 @@ export default function ProductDetailPage() {
   };
 
   const goToNextImage = () => {
-    if (!productDemo?.galleryImages?.length) {
+    if (!product?.galleryImages?.length) {
       return;
     }
-    setActiveImageIndex((previousIndex) => (previousIndex + 1) % productDemo.galleryImages.length);
+    setActiveImageIndex((previousIndex) => (previousIndex + 1) % product.galleryImages.length);
   };
 
   const goToPreviousImage = () => {
-    if (!productDemo?.galleryImages?.length) {
+    if (!product?.galleryImages?.length) {
       return;
     }
     setActiveImageIndex((previousIndex) =>
-      previousIndex === 0 ? productDemo.galleryImages.length - 1 : previousIndex - 1,
+      previousIndex === 0 ? product.galleryImages.length - 1 : previousIndex - 1,
     );
   };
 
@@ -138,7 +127,7 @@ export default function ProductDetailPage() {
     }));
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <section className="rounded-3xl border border-border/60 bg-card/70 p-8 text-center" data-testid="product-detail-loading-state">
         <p className="text-sm text-muted-foreground" data-testid="product-detail-loading-text">Loading product details...</p>
@@ -146,7 +135,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product || !productDemo) {
+  if (!product || !product) {
     return (
       <section className="rounded-3xl border border-border/60 bg-card/70 p-8 text-center" data-testid="product-detail-not-found-state">
         <p className="text-sm text-muted-foreground" data-testid="product-detail-not-found-text">Product not found.</p>
@@ -176,7 +165,7 @@ export default function ProductDetailPage() {
             <img
               key={currentGalleryImage}
               src={currentGalleryImage}
-              alt={product.name}
+              alt={product.title}
               className="detail-gallery-image-enter h-full w-full max-h-[540px] object-cover object-center"
               data-testid="product-detail-image"
             />
@@ -186,11 +175,11 @@ export default function ProductDetailPage() {
               </Button>
             </div>
             <span className="absolute left-4 top-4 rounded-full border border-border/60 bg-background/80 px-3 py-1 text-xs font-medium capitalize" data-testid="product-detail-badge">
-              {productDemo.badge}
+              {product.badge}
             </span>
 
             <div className="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto" data-testid="product-detail-image-thumbnails">
-              {productDemo.galleryImages.map((image, imageIndex) => (
+              {product.galleryImages.map((image, imageIndex) => (
                 <button
                   key={image}
                   type="button"
@@ -200,7 +189,7 @@ export default function ProductDetailPage() {
                   onClick={() => setActiveImageIndex(imageIndex)}
                   data-testid={`product-detail-thumbnail-${imageIndex}`}
                 >
-                  <img src={image} alt={`${product.name} view ${imageIndex + 1}`} className="h-full w-full object-cover object-center" data-testid={`product-detail-thumbnail-image-${imageIndex}`} />
+                  <img src={image} alt={`${product.title} view ${imageIndex + 1}`} className="h-full w-full object-cover object-center" data-testid={`product-detail-thumbnail-image-${imageIndex}`} />
                 </button>
               ))}
             </div>
@@ -220,8 +209,8 @@ export default function ProductDetailPage() {
                 ))}
               </div>
 
-              <h1 className="text-4xl font-bold text-foreground sm:text-5xl" data-testid="product-detail-name">{product.name}</h1>
-              <p className="text-sm text-muted-foreground md:text-base" data-testid="product-detail-description">{productDemo.detailedDescription}</p>
+              <h1 className="text-4xl font-bold text-foreground sm:text-5xl" data-testid="product-detail-name">{product.title}</h1>
+              <p className="text-sm text-muted-foreground md:text-base" data-testid="product-detail-description">{product.detailedDescription}</p>
 
               <div className="flex flex-wrap items-center gap-5" data-testid="product-detail-price-rating-row">
                 <p className="text-3xl font-semibold" data-testid="product-detail-price">${product.price.toFixed(2)}</p>
@@ -229,13 +218,13 @@ export default function ProductDetailPage() {
                   <Star className="h-4 w-4 fill-current text-primary" />
                   {product.rating} / 5
                 </p>
-                <p className="text-sm text-muted-foreground" data-testid="product-detail-review-count">({productDemo.reviewSummary.totalCount} reviews)</p>
+                <p className="text-sm text-muted-foreground" data-testid="product-detail-review-count">({product.reviewSummary.totalCount} reviews)</p>
               </div>
 
               <div className="rounded-2xl border border-border/60 bg-background/50 p-4" data-testid="product-detail-variants-box">
                 <p className="text-sm font-medium" data-testid="product-detail-variants-title">Variants</p>
                 <div className="mt-3 space-y-3" data-testid="product-detail-variants-groups">
-                  {productDemo.variantGroups.map((group) => (
+                  {product.variants.map((group) => (
                     <div key={group.name} className="space-y-2" data-testid={`product-detail-variant-group-${group.name.toLowerCase().replace(/\s+/g, "-")}`}>
                       <p className="text-xs uppercase tracking-wide text-muted-foreground" data-testid={`product-detail-variant-group-label-${group.name.toLowerCase().replace(/\s+/g, "-")}`}>
                         {group.name}
@@ -294,12 +283,12 @@ export default function ProductDetailPage() {
           <Card className="border-border/60 bg-card/70" data-testid="product-detail-reviews-summary-card">
             <CardContent className="space-y-4 p-5">
               <p className="text-sm text-muted-foreground" data-testid="product-detail-reviews-summary-label">Average rating</p>
-              <p className="text-4xl font-semibold" data-testid="product-detail-reviews-average-value">{productDemo.reviewSummary.average.toFixed(1)}</p>
+              <p className="text-4xl font-semibold" data-testid="product-detail-reviews-average-value">{product.reviewSummary.average.toFixed(1)}</p>
               <p className="text-sm text-muted-foreground" data-testid="product-detail-reviews-recommendation">
-                {productDemo.reviewSummary.recommendationPercent}% recommend this product
+                {product.reviewSummary.recommendationPercent}% recommend this product
               </p>
               <div className="space-y-2" data-testid="product-detail-reviews-breakdown">
-                {productDemo.reviewSummary.breakdown.map((item) => (
+                {product.reviewSummary.breakdown.map((item) => (
                   <div key={item.stars} className="flex items-center gap-2" data-testid={`product-detail-review-breakdown-${item.stars}`}>
                     <span className="w-4 text-xs text-muted-foreground">{item.stars}</span>
                     <div className="h-2 flex-1 rounded-full bg-secondary/70" data-testid={`product-detail-review-breakdown-bar-${item.stars}`}>
@@ -312,7 +301,7 @@ export default function ProductDetailPage() {
           </Card>
 
           <div className="grid grid-cols-1 gap-3" data-testid="product-detail-review-cards">
-            {productDemo.reviews.map((review, index) => (
+            {product.reviews.map((review, index) => (
               <Card key={`${review.author}-${index}`} className="border-border/60 bg-card/70" data-testid={`product-detail-review-card-${index}`}>
                 <CardContent className="space-y-2 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2" data-testid={`product-detail-review-header-${index}`}>
@@ -337,7 +326,7 @@ export default function ProductDetailPage() {
           <Card className="border-border/60 bg-card/70" data-testid="product-detail-specifications-card">
             <CardContent className="space-y-3 p-5">
               <p className="text-sm font-medium" data-testid="product-detail-specifications-heading">Specifications</p>
-              {productDemo.specifications.map((item) => (
+              {product.specifications.map((item) => (
                 <div key={item.label} className="flex items-start justify-between gap-4 border-b border-border/50 pb-2 last:border-0" data-testid={`product-detail-spec-row-${item.label.toLowerCase().replace(/\s+/g, "-")}`}>
                   <p className="text-xs text-muted-foreground">{item.label}</p>
                   <p className="text-xs font-medium text-right">{item.value}</p>
@@ -349,7 +338,7 @@ export default function ProductDetailPage() {
           <Card className="border-border/60 bg-card/70" data-testid="product-detail-technical-card">
             <CardContent className="space-y-3 p-5">
               <p className="text-sm font-medium" data-testid="product-detail-technical-heading">Technical Details</p>
-              {productDemo.technicalDetails.map((item) => (
+              {product.technicalDetails.map((item) => (
                 <div key={item.label} className="flex items-start justify-between gap-4 border-b border-border/50 pb-2 last:border-0" data-testid={`product-detail-technical-row-${item.label.toLowerCase().replace(/\s+/g, "-")}`}>
                   <p className="text-xs text-muted-foreground">{item.label}</p>
                   <p className="text-xs font-medium text-right">{item.value}</p>
@@ -365,7 +354,7 @@ export default function ProductDetailPage() {
         <Card className="border-border/60 bg-card/70" data-testid="product-detail-faq-card">
           <CardContent className="p-5">
             <Accordion type="single" collapsible data-testid="product-detail-faq-accordion">
-              {productDemo.faqs.map((faq, index) => (
+              {product.faqs.map((faq, index) => (
                 <AccordionItem key={faq.question} value={`faq-${index}`} data-testid={`product-detail-faq-item-${index}`}>
                   <AccordionTrigger className="text-sm" data-testid={`product-detail-faq-question-${index}`}>
                     {faq.question}
@@ -385,7 +374,7 @@ export default function ProductDetailPage() {
 
       <section className="detail-section-enter space-y-4" data-testid="product-detail-related-section">
         <h2 className="text-base font-medium text-primary md:text-lg" data-testid="product-detail-related-title">Related products</h2>
-        {relatedProducts.length === 0 ? (
+        {!filteredRelated || filteredRelated.length === 0 ? (
           <Card className="border-border/60 bg-card/70" data-testid="product-detail-related-empty">
             <CardContent className="p-5 text-sm text-muted-foreground" data-testid="product-detail-related-empty-text">
               More items in this category are coming soon.
@@ -393,10 +382,10 @@ export default function ProductDetailPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4" data-testid="product-detail-related-grid">
-            {relatedProducts.map((item, index) => (
+            {filteredRelated.map((item, index) => (
               <Link key={item.id} to={`/products/${item.id}`} className="card-rise group overflow-hidden rounded-2xl border border-border/60 bg-card/70" style={{ animationDelay: `${index * 0.08}s` }} data-testid={`product-detail-related-link-${item.id}`}>
                 <div className="aspect-[4/3] overflow-hidden">
-                  <img src={item.image_url} alt={item.name} className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105" data-testid={`product-detail-related-image-${item.id}`} />
+                  <img src={item.image} alt={item.name} className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105" data-testid={`product-detail-related-image-${item.id}`} />
                 </div>
                 <div className="space-y-2 p-4" data-testid={`product-detail-related-content-${item.id}`}>
                   <p className="line-clamp-1 text-xl font-semibold" data-testid={`product-detail-related-name-${item.id}`}>{item.name}</p>

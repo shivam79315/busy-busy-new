@@ -4,6 +4,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "@/context/AuthContext";
 
 const navLinkClass = ({ isActive }) =>
   `rounded-full px-3 py-1 text-sm transition-colors duration-300 ${
@@ -17,8 +18,11 @@ const Navbar = () => {
   const location = useLocation();
 
   // Hardcoded auth state
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [user, setUser] = useState({ name: "John Doe" });
+  const { user, logout, isAuthenticated } = useAuth();
+
+  const displayName =
+  user?.name?.split(" ")[0] || user?.name?.split(" ")[1] || user?.email;
+  const initial = displayName?.charAt(0)?.toUpperCase();
 
   const [searchTerm, setSearchTerm] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -40,9 +44,8 @@ const Navbar = () => {
     navigate(`/products${params.toString() ? `?${params.toString()}` : ""}`);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-    setUser(null);
+  const handleLogout = async () => {
+    await logout();
     setMobileMenuOpen(false);
     navigate("/");
   };
@@ -130,9 +133,22 @@ const Navbar = () => {
 
           {isAuthenticated ? (
             <>
-              <span className="hidden rounded-full bg-secondary/70 px-3 py-2 text-xs text-muted-foreground md:inline-flex">
-                {user?.name}
-              </span>
+              <div className="relative hidden md:block group">
+                {user?.profileImg ? (
+                  <img
+                    src={user.profileImg}
+                    className="h-9 w-9 rounded-full object-cover cursor-pointer transition-transform duration-200 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-primary/15 text-sm font-semibold text-primary transition-transform duration-200 group-hover:scale-105">
+                    {initial}
+                  </div>
+                )}
+
+                <div className="pointer-events-none absolute right-0 top-11 whitespace-nowrap rounded-lg bg-card px-3 py-1 text-xs text-muted-foreground opacity-0 shadow-md transition-all duration-200 group-hover:opacity-100">
+                  {displayName}
+                </div>
+              </div>
 
               <Button
                 variant="ghost"
