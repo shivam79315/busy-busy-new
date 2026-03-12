@@ -3,7 +3,9 @@ import {
   setDoc,
   getDoc,
   increment,
-  serverTimestamp
+  serverTimestamp,
+  updateDoc,
+  deleteDoc
 } from "firebase/firestore";
 import { db } from "@/api/firebase";
 
@@ -11,7 +13,9 @@ import { getAuth } from "firebase/auth";
 import { toast } from "sonner";
 import { withAuthGuard } from "./auth-guard";
 
-async function addCartItem(uid, productId) {
+async function addCartItem(productId) {
+  const uid = getAuth().currentUser.uid;
+
   const cartRef = doc(db, "users", uid, "cart", productId);
 
   const existing = await getDoc(cartRef);
@@ -31,6 +35,24 @@ async function addCartItem(uid, productId) {
   }
 }
 
+export async function updateCartQuantity(productId, quantity) {
+  const uid = getAuth().currentUser.uid;
+
+  const ref = doc(db, "users", uid, "cart", productId);
+
+  await updateDoc(ref, {
+    quantity: quantity
+  })
+}
+
+export async function removeCartItem(productId) {
+  const uid = getAuth().currentUser.uid;
+
+  const ref = doc(db, "users", uid, "cart", productId);
+
+  await deleteDoc(ref);
+}
+
 export async function handleAddToCart({
   productId,
   isAuthenticated,
@@ -44,7 +66,7 @@ export async function handleAddToCart({
     fallbackErrorMessage: "Unable to add item to cart.",
     callback: async () => {
       const uid = getAuth().currentUser.uid;
-      await addCartItem(uid, productId);
+      await addCartItem(productId);
       toast.success("Added to cart.");
     }
   });

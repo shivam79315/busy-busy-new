@@ -10,11 +10,11 @@ import { getAuth } from "firebase/auth";
 import { fetchUserCart } from "@/hooks/useCart";
 import { fetchProducts } from "@/api/products";
 import {
-  getLocalCart,
   placeLocalOrder,
   removeLocalCartItem,
   updateLocalCartItemQuantity,
 } from "../lib/store-service";
+import { removeCartItem, updateCartQuantity } from "@/lib/cart.service";
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -71,10 +71,38 @@ export default function CartPage() {
     fetchCart();
   }, []);
 
+  const goToProduct = (productId) => {
+    navigate(`/products/${productId}`);
+  };
+
   const updateQuantity = async (productId, quantity) => {
     try {
-      const data = await updateLocalCartItemQuantity(productId, quantity);
-      setCart(data);
+      const data = await updateCartQuantity(productId, quantity);
+      setCart((prevCart) => {
+        const updatedItems = prevCart.items.map((item) => {
+          if (item.product_id === productId) {
+            const newLineTotal = item.price * quantity;
+
+            return {
+              ...item,
+              quantity,
+              line_total: newLineTotal
+            };
+          }
+          return item;
+        });
+
+        const subtotal = updatedItems.reduce(
+          (sum, item) => sum + item.line_total,
+          0
+        );
+
+        return {
+          items: updatedItems,
+          subtotal
+        };
+      });
+
     } catch (error) {
       toast.error(getErrorMessage(error, "Unable to update quantity."));
     }
@@ -82,8 +110,8 @@ export default function CartPage() {
 
   const removeItem = async (productId) => {
     try {
-      const data = await removeLocalCartItem(productId);
-      setCart(data);
+      const data = await removeCartItem(productId);
+      fetchCart();
       toast.success("Item removed from cart.");
     } catch (error) {
       toast.error(getErrorMessage(error, "Unable to remove item."));
@@ -136,7 +164,12 @@ export default function CartPage() {
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3" data-testid="cart-content-grid">
           <div className="space-y-4 lg:col-span-2" data-testid="cart-items-list">
             {cart.items.map((item) => (
-              <Card key={item.product_id} className="border-border/60 bg-card/70" data-testid={`cart-item-${item.product_id}`}>
+              <Card 
+                key={item.product_id} 
+                className="border-border/60 bg-card/70"
+                onClick={() => goToProduct(item.product_id)}
+                data-testid={`cart-item-${item.product_id}`}
+              >
                 <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
                   <img src={item.image_url} alt={item.name} className="h-24 w-full rounded-xl object-cover object-center sm:w-24" data-testid={`cart-item-image-${item.product_id}`} />
                   <div className="flex-1 space-y-1">
@@ -144,14 +177,21 @@ export default function CartPage() {
                     <p className="text-sm text-muted-foreground" data-testid={`cart-item-price-${item.product_id}`}>${item.price.toFixed(2)}</p>
                     <p className="text-sm font-medium" data-testid={`cart-item-total-${item.product_id}`}>Line total: ${item.line_total.toFixed(2)}</p>
                   </div>
-                  <div className="flex items-center gap-2" data-testid={`cart-item-actions-${item.product_id}`}>
+                  <div 
+                    className="flex items-center gap-2" 
+                    onClick={(e) => e.stopPropagation()}
+                    data-testid={`cart-item-actions-${item.product_id}`}
+                  >
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="rounded-full"
+                      className="rounded-full cursor-pointer"
                       disabled={item.quantity <= 1}
-                      onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateQuantity(item.product_id, item.quantity - 1);
+                      }}
                       data-testid={`cart-item-decrease-${item.product_id}`}
                     >
                       <Minus className="h-4 w-4" />
@@ -161,8 +201,11 @@ export default function CartPage() {
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="rounded-full"
-                      onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                      className="rounded-full cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        updateQuantity(item.product_id, item.quantity + 1);
+                      }}
                       data-testid={`cart-item-increase-${item.product_id}`}
                     >
                       <Plus className="h-4 w-4" />
@@ -171,8 +214,11 @@ export default function CartPage() {
                       type="button"
                       variant="outline"
                       size="icon"
-                      className="rounded-full"
-                      onClick={() => removeItem(item.product_id)}
+                      className="rounded-full cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeItem(item.product_id);
+                      }}
                       data-testid={`cart-item-remove-${item.product_id}`}
                     >
                       <Trash2 className="h-4 w-4" />
