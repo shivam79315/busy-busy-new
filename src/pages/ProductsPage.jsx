@@ -9,8 +9,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "../components/ui/popove
 import { useAuth } from "../context/AuthContext";
 import { getErrorMessage } from "../lib/error-message";
 import { useProducts } from "../hooks/useProducts";
-import { addLocalWishlistItem } from "../lib/store-service";
 import { handleAddToCart } from "@/lib/cart.service";
+import { addToWishlist } from "@/lib/wishlist-service";
 
 export default function ProductsPage() {
   const navigate = useNavigate();
@@ -160,10 +160,14 @@ export default function ProductsPage() {
       redirectTo: "/products"
   });
 
-  const addToWishlist = async (productId) => {
+  const addToWishlistHandler = async (productId) => {
     await withAuthGuard(async () => {
-      await addLocalWishlistItem({ product_id: productId, quantity: 1 });
-      toast.success("Saved to wishlist.");
+      try {
+        await addToWishlist(productId);
+        toast.success("Saved to wishlist.");
+      } catch (error) {
+        toast.error(getErrorMessage(error, "Unable to save item to wishlist."));
+      }
     }, "Unable to save item to wishlist.");
   };
 
@@ -339,7 +343,7 @@ export default function ProductsPage() {
               product={product}
               index={index}
               onAddToCart={addToCart}
-              onAddToWishlist={addToWishlist}
+              onAddToWishlist={addToWishlistHandler}
             />
           ))}
         </div>
