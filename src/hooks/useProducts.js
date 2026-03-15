@@ -1,7 +1,7 @@
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/api/firebase";
 import { useQuery } from "@tanstack/react-query";
-import { fetchProducts } from "@/api/products";
+import { fetchProducts, fetchProductsByIds } from "@/api/products";
 
 async function fetchProduct(productId) {
   const snapshot = await getDoc(doc(db, "products", productId));
@@ -28,5 +28,13 @@ export function useRelatedProducts(category) {
     queryKey: ["related-products", category],
     queryFn: () => getProductsByCategory(category),
     enabled: !!category
+  });
+}
+
+export function useProductsByIds(productIds) {
+  return useQuery({
+    queryKey: ["products-by-ids", productIds],
+    queryFn: () => fetchProductsByIds(productIds),
+    enabled: productIds?.length > 0
   });
 }

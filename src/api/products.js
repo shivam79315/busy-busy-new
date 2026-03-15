@@ -1,4 +1,4 @@
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "./firebase";
 
 export async function fetchProducts() {
@@ -18,4 +18,20 @@ export async function getProductById(productId) {
 
   const snapshot = await getDocs(q);
   return snapshot.docs[0].data();
+}
+
+export async function fetchProductsByIds(productIds) {
+  if (!productIds?.length) return [];
+
+  const q = query(
+    collection(db, "products"),
+    where("productId", "in", productIds)
+  );
+
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  }));
 }

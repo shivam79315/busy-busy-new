@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card"
 import { getErrorMessage } from "../lib/error-message";
 import { fetchOrders } from "@/api/orders";
 import { getAuth } from "firebase/auth";
+import { fetchProductsByIds } from "@/api/products";
 
 export default function OrdersPage() {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
+  const [productsMap, setProductsMap] = useState({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -17,9 +19,31 @@ export default function OrdersPage() {
 
       try {
         const uid = getAuth().currentUser.uid;
+        const ordersData = await fetchOrders(uid);
+
+        // collect product ids
+        const productIds = [
+          ...new Set(
+            ordersData.flatMap((order) =>
+              order.items.map((item) => item.productId)
+            )
+          )
+        ];
+
+        // fetch only required products
+        const products = await fetchProductsByIds(productIds);
+
+        // create lookup map
+        const map = {};
+        products.forEach((p) => {
+          map[p.productId] = p;
+        });
+
+        setProductsMap(map);
         const data = await fetchOrders(uid);
         setOrders(data || []);
       } catch (error) {
+        console.log(error)
         toast.error(getErrorMessage(error, "Unable to load orders."));
       } finally {
         setIsLoading(false);
@@ -82,24 +106,36 @@ export default function OrdersPage() {
               </CardHeader>
 
               <CardContent className="space-y-3">
-                {order.items?.map((item) => (
+                {order.items?.map((item) => {
+                  const product = productsMap[item.productId];
+
+                  return (
                   <div
                     key={`${order.id}-${item.productId}`}
                     className="flex items-center justify-between rounded-xl border border-border/60 bg-background/50 p-3 cursor-pointer"
                     onClick={() => navigate(`/products/${item.productId}`)}
                   >
-                    <div>
-                      <p className="text-sm font-medium">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Qty: {item.quantity}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={product?.image}
+                        alt={item.name}
+                        className="h-12 w-12 rounded-md object-cover"
+                      />
+
+                      <div className="flex flex-col">
+                        <p className="text-sm font-medium">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Qty: {item.quantity}
+                        </p>
+                      </div>
                     </div>
 
                     <p className="text-sm font-semibold">
                       ${(item.price * item.quantity).toFixed(2)}
                     </p>
                   </div>
-                ))}
+                  )
+                })}
 
                 <div className="flex items-center justify-end border-t border-border/60 pt-3">
                   <p className="text-sm font-semibold">
