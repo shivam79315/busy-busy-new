@@ -9,12 +9,7 @@ import { getErrorMessage } from "../lib/error-message";
 import { getAuth } from "firebase/auth";
 import { fetchUserCart } from "@/hooks/useCart";
 import { fetchProducts } from "@/api/products";
-import {
-  placeLocalOrder,
-  removeLocalCartItem,
-  updateLocalCartItemQuantity,
-} from "../lib/store-service";
-import { removeCartItem, updateCartQuantity } from "@/lib/cart.service";
+import { handleCheckout, removeCartItem, updateCartQuantity } from "@/lib/cart.service";
 
 export default function CartPage() {
   const navigate = useNavigate();
@@ -46,7 +41,8 @@ export default function CartPage() {
           image_url: product?.image,
           price,
           quantity,
-          line_total: price * quantity
+          stripePriceId: product?.stripePriceId,
+          line_total: price * quantity,
         };
       });
 
@@ -126,11 +122,9 @@ export default function CartPage() {
 
     setIsPlacingOrder(true);
     try {
-      await placeLocalOrder({ shipping_address: shippingAddress.trim() });
-      toast.success("Order placed successfully.");
-      navigate("/orders");
+      await handleCheckout(cart.items, shippingAddress);
     } catch (error) {
-      toast.error(getErrorMessage(error, "Unable to place order."));
+      toast.error(getErrorMessage(error, "Unable to start checkout."));
     } finally {
       setIsPlacingOrder(false);
     }
