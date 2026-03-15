@@ -71,3 +71,38 @@ export async function handleAddToCart({
     }
   });
 }
+
+export async function handleCheckout(cartItems, shippingAddress) {
+  const uid = getAuth().currentUser.uid;
+
+  const response = await fetch(
+    "https://busy-busy-backend.vercel.app/api/create-checkout-session",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        userId: uid,
+        shippingAddress,
+        items: cartItems.map((item) => ({
+          priceId: item.stripePriceId,
+          productId: item.product_id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        }))
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error || "Unable to create checkout session");
+  }
+
+  if (data.url) {
+    window.location.href = data.url;
+  }
+}
