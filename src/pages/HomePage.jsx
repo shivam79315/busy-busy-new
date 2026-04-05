@@ -2,6 +2,7 @@ import { ArrowRight, ShieldCheck, Sparkles, Truck, WandSparkles } from "lucide-r
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
+import { useAuth } from "@/context/AuthContext";
 
 const categoryHighlights = [
   {
@@ -74,6 +75,9 @@ const editorialPicks = [
 ];
 
 export default function HomePage() {
+
+  const {user} = useAuth();
+
   return (
     <div className="space-y-20 pb-6" data-testid="home-page">
       <section className="hero-fade-up relative overflow-hidden rounded-[2.2rem] border border-border/70 bg-card/70 px-6 py-16 shadow-2xl shadow-primary/10 backdrop-blur-xl md:px-14 md:py-24" data-testid="home-hero-section">
@@ -99,9 +103,11 @@ export default function HomePage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
+            {!user && (
             <Button asChild variant="outline" className="h-11 rounded-full px-6" data-testid="home-create-account-button">
               <Link to="/register">Create account</Link>
             </Button>
+            )}
           </div>
         </div>
       </section>
