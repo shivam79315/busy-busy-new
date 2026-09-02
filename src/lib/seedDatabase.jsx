@@ -17,7 +17,6 @@ import {
   CATEGORY_SPECIFICATIONS,
   CATEGORY_TECH_DETAILS,
   CATEGORY_FAQS,
-  CATEGORY_REVIEWS,
 } from "../lib/product-ui-data";
 
 export default function SeedDatabase() {
@@ -58,23 +57,19 @@ export default function SeedDatabase() {
         const specifications = CATEGORY_SPECIFICATIONS[product.category] || [];
         const technicalDetails = CATEGORY_TECH_DETAILS[product.category] || [];
         const faqs = CATEGORY_FAQS[product.category] || [];
-        const reviews = CATEGORY_REVIEWS[product.category] || [];
-
-        const reviewCount = 127 + (meta.discount || 10);
 
         const reviewSummary = {
-          average: product.rating,
-          totalCount: reviewCount,
-          recommendationPercent: Math.min(
-            99,
-            82 + Math.floor(product.rating * 3)
-          ),
+          totalCount: 0,
+          ratingSum: 0,
+          starCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+          average: 0,
+          recommendationPercent: 0,
           breakdown: [
-            { stars: 5, percent: Math.min(92, 62 + Math.floor(product.rating * 6)) },
-            { stars: 4, percent: 22 },
-            { stars: 3, percent: 10 },
-            { stars: 2, percent: 4 },
-            { stars: 1, percent: 2 },
+            { stars: 5, percent: 0 },
+            { stars: 4, percent: 0 },
+            { stars: 3, percent: 0 },
+            { stars: 2, percent: 0 },
+            { stars: 1, percent: 0 },
           ],
         };
 
@@ -102,7 +97,6 @@ export default function SeedDatabase() {
           specifications,
           technicalDetails,
           faqs,
-          reviews,
           reviewSummary,
 
           inStock: true,

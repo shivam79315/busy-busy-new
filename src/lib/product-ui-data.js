@@ -306,29 +306,6 @@ export const CATEGORY_FAQS = {
   ],
 };
 
-export const CATEGORY_REVIEWS = {
-  audio: [
-    { rating: 5, title: "Crystal clear sound", body: "The soundstage is wide and calls are super clear even in noisy places.", author: "Aman T.", date: "2 days ago" },
-    { rating: 4, title: "Great for flights", body: "ANC works really well and battery lasted my whole round trip.", author: "Rhea M.", date: "1 week ago" },
-    { rating: 5, title: "Premium build", body: "Looks elegant and feels sturdy without being too heavy.", author: "Liam C.", date: "2 weeks ago" },
-  ],
-  footwear: [
-    { rating: 5, title: "Very comfortable", body: "Excellent cushioning and no discomfort even after long walks.", author: "Priya S.", date: "3 days ago" },
-    { rating: 4, title: "Good grip", body: "The outsole feels stable on wet pavements too.", author: "Noah B.", date: "6 days ago" },
-    { rating: 5, title: "Stylish and practical", body: "Matches casual fits and performs great during workouts.", author: "Karan D.", date: "12 days ago" },
-  ],
-  watches: [
-    { rating: 5, title: "Elegant finish", body: "The dial and strap combination looks premium in person.", author: "Meera P.", date: "4 days ago" },
-    { rating: 4, title: "Accurate timekeeping", body: "Keeps perfect time and feels comfortable all day.", author: "Ethan R.", date: "8 days ago" },
-    { rating: 5, title: "Compliment magnet", body: "Minimal design with classy presence, exactly what I wanted.", author: "Sia K.", date: "2 weeks ago" },
-  ],
-  skincare: [
-    { rating: 5, title: "Visible glow", body: "Skin feels softer and hydrated after just one week of use.", author: "Neha V.", date: "2 days ago" },
-    { rating: 4, title: "Gentle formula", body: "No irritation and texture is light, perfect for daily routine.", author: "Olivia J.", date: "1 week ago" },
-    { rating: 5, title: "Worth it", body: "Good ingredients and noticeable difference in overall skin texture.", author: "Ishita R.", date: "11 days ago" },
-  ],
-};
-
 export const BRAND_FILTER_OPTIONS = ["all", "Auraluxe", "NeoCore", "StrideLab", "UrbanPace", "Chronelle", "TimeForge", "DermaLeaf", "PureMoss"];
 
 export const DISCOUNT_FILTER_OPTIONS = [
@@ -377,9 +354,6 @@ export const getProductDetailDemo = (product) => {
   const specifications = CATEGORY_SPECIFICATIONS[product.category] || [];
   const technicalDetails = CATEGORY_TECH_DETAILS[product.category] || [];
   const faqs = CATEGORY_FAQS[product.category] || [];
-  const reviews = CATEGORY_REVIEWS[product.category] || [];
-
-  const reviewCount = 127 + enrichedProduct.discount;
 
   return {
     ...enrichedProduct,
@@ -390,18 +364,5 @@ export const getProductDetailDemo = (product) => {
     specifications,
     technicalDetails,
     faqs,
-    reviews,
-    reviewSummary: {
-      average: product.rating,
-      totalCount: reviewCount,
-      recommendationPercent: Math.min(99, 82 + Math.floor(product.rating * 3)),
-      breakdown: [
-        { stars: 5, percent: Math.min(92, 62 + Math.floor(product.rating * 6)) },
-        { stars: 4, percent: 22 },
-        { stars: 3, percent: 10 },
-        { stars: 2, percent: 4 },
-        { stars: 1, percent: 2 },
-      ],
-    },
   };
 };

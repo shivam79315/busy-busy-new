@@ -26,7 +26,12 @@ import {
   addLocalWishlistItem
 } from "../lib/store-service";
 import { useProduct, useRelatedProducts } from "@/hooks/useProducts";
+import { useProductReviews, useUserReview, useDeleteReview } from "@/hooks/useReviews";
 import { handleAddToCart } from "@/lib/cart.service.js";
+import ReviewForm from "@/components/ReviewForm";
+
+const formatReviewDate = (timestamp) =>
+  timestamp?.toDate ? timestamp.toDate().toLocaleDateString() : "";
 
 export default function ProductDetailPage() {
   const { productId } = useParams();
@@ -37,7 +42,12 @@ export default function ProductDetailPage() {
   relatedProducts?.filter(p => p.productId !== product.productId).slice(0,4) || [];
 
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+
+  const { data: productReviews } = useProductReviews(product?.productId);
+  const { data: userReview } = useUserReview(product?.productId, user?.uid);
+  const { mutateAsync: deleteReview, isPending: isDeletingReview } = useDeleteReview();
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedVariants, setSelectedVariants] = useState({});
@@ -306,7 +316,21 @@ export default function ProductDetailPage() {
       </section>
 
       <section className="detail-section-enter space-y-4" data-testid="product-detail-reviews-section">
-        <h2 className="text-base font-medium text-primary md:text-lg" data-testid="product-detail-reviews-title">Ratings & Reviews</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-medium text-primary md:text-lg" data-testid="product-detail-reviews-title">Ratings & Reviews</h2>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() =>
+              guardedAction(async () => {
+                setIsReviewFormOpen(true);
+              })
+            }
+            data-testid="product-detail-write-review-button"
+          >
+            {userReview ? "Edit your review" : "Write a review"}
+          </Button>
+        </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_1fr]" data-testid="product-detail-reviews-grid">
           <Card className="border-border/60 bg-card/70" data-testid="product-detail-reviews-summary-card">
             <CardContent className="space-y-4 p-5">
@@ -329,24 +353,60 @@ export default function ProductDetailPage() {
           </Card>
 
           <div className="grid grid-cols-1 gap-3" data-testid="product-detail-review-cards">
-            {product.reviews.map((review, index) => (
-              <Card key={`${review.author}-${index}`} className="border-border/60 bg-card/70" data-testid={`product-detail-review-card-${index}`}>
-                <CardContent className="space-y-2 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2" data-testid={`product-detail-review-header-${index}`}>
-                    <p className="text-sm font-medium" data-testid={`product-detail-review-author-${index}`}>{review.author}</p>
-                    <p className="text-xs text-muted-foreground" data-testid={`product-detail-review-date-${index}`}>{review.date}</p>
-                  </div>
-                  <p className="inline-flex items-center gap-1 text-sm" data-testid={`product-detail-review-rating-${index}`}>
-                    <Star className="h-4 w-4 fill-current text-primary" />
-                    {review.rating}.0 · {review.title}
-                  </p>
-                  <p className="text-sm text-muted-foreground" data-testid={`product-detail-review-body-${index}`}>{review.body}</p>
+            {!productReviews || productReviews.length === 0 ? (
+              <Card className="border-border/60 bg-card/70">
+                <CardContent className="p-4 text-sm text-muted-foreground">
+                  No reviews yet. Be the first to share your experience.
                 </CardContent>
               </Card>
-            ))}
+            ) : (
+              productReviews.map((review, index) => (
+                <Card key={review.id} className="border-border/60 bg-card/70" data-testid={`product-detail-review-card-${index}`}>
+                  <CardContent className="space-y-2 p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2" data-testid={`product-detail-review-header-${index}`}>
+                      <p className="text-sm font-medium" data-testid={`product-detail-review-author-${index}`}>{review.authorName}</p>
+                      <p className="text-xs text-muted-foreground" data-testid={`product-detail-review-date-${index}`}>{formatReviewDate(review.createdAt)}</p>
+                    </div>
+                    <p className="inline-flex items-center gap-1 text-sm" data-testid={`product-detail-review-rating-${index}`}>
+                      <Star className="h-4 w-4 fill-current text-primary" />
+                      {review.rating}.0 · {review.title}
+                    </p>
+                    <p className="text-sm text-muted-foreground" data-testid={`product-detail-review-body-${index}`}>{review.body}</p>
+                    {review.uid === user?.uid && (
+                      <Button
+                        variant="ghost"
+                        className="h-auto px-0 text-xs text-destructive hover:text-destructive"
+                        disabled={isDeletingReview}
+                        onClick={async () => {
+                          try {
+                            await deleteReview({ productId: product.productId, uid: user.uid });
+                            toast.success("Review deleted.");
+                          } catch (error) {
+                            toast.error(getErrorMessage(error, "Unable to delete review."));
+                          }
+                        }}
+                      >
+                        Delete review
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
         </div>
       </section>
+
+      {isAuthenticated && (
+        <ReviewForm
+          open={isReviewFormOpen}
+          onOpenChange={setIsReviewFormOpen}
+          productId={product.productId}
+          uid={user?.uid}
+          authorName={user?.name || "Anonymous"}
+          existingReview={userReview}
+        />
+      )}
 
       <section className="detail-section-enter space-y-4" data-testid="product-detail-specs-section">
         <h2 className="text-base font-medium text-primary md:text-lg" data-testid="product-detail-specs-title">Specifications / Technical Details</h2>
