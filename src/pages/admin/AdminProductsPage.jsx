@@ -26,7 +26,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useProducts } from "@/hooks/useProducts";
-import { useDeleteProduct, useUpdateProduct } from "@/hooks/useAdminProducts";
+import { useDeleteProduct, useSaveSkus, useUpdateProduct } from "@/hooks/useAdminProducts";
+import { useSkus } from "@/hooks/useSkus";
 import { getErrorMessage } from "@/lib/error-message";
 
 const COLUMNS = [
@@ -37,7 +38,7 @@ const COLUMNS = [
   { key: "price", label: "Price", defaultVisible: true },
   { key: "discount", label: "Discount", defaultVisible: false },
   { key: "rating", label: "Rating", defaultVisible: false },
-  { key: "stock", label: "Stock", defaultVisible: true },
+  { key: "variants", label: "Variants", defaultVisible: true },
   { key: "badge", label: "Badge", defaultVisible: false },
   { key: "tags", label: "Tags", defaultVisible: false },
   { key: "stripePriceId", label: "Stripe Price ID", defaultVisible: false },
@@ -74,8 +75,10 @@ const renderCell = (key, product) => {
           ) : null}
         </>
       );
-    case "stock":
-      return product.inStock ? "In stock" : "Out of stock";
+    case "variants":
+      return product.variants?.length
+        ? `${product.variants.length} group${product.variants.length === 1 ? "" : "s"}`
+        : "No variants";
     case "badge":
       return product.badge || "—";
     case "tags":
@@ -99,12 +102,14 @@ export default function AdminProductsPage() {
   const { data: products, isLoading } = useProducts();
   const deleteProduct = useDeleteProduct();
   const updateProduct = useUpdateProduct();
+  const saveSkus = useSaveSkus();
   const [search, setSearch] = useState("");
   const [visibleColumns, setVisibleColumns] = useState(
     () => new Set(COLUMNS.filter((column) => column.defaultVisible).map((column) => column.key))
   );
   const [editingProduct, setEditingProduct] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const { data: editingSkus, isLoading: isLoadingSkus } = useSkus(editingProduct?.id);
 
   const toggleColumn = (key) => {
     setVisibleColumns((prev) => {
@@ -149,9 +154,10 @@ export default function AdminProductsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleEditSubmit = async (values) => {
+  const handleEditSubmit = async ({ skus, ...productValues }) => {
     try {
-      await updateProduct.mutateAsync({ id: editingProduct.id, data: values });
+      await updateProduct.mutateAsync({ id: editingProduct.id, data: productValues });
+      await saveSkus.mutateAsync({ productId: editingProduct.id, skus });
       toast.success("Product updated.");
       setIsDialogOpen(false);
     } catch (error) {
@@ -265,12 +271,16 @@ export default function AdminProductsPage() {
           <DialogHeader className="border-b border-border/60 px-6 py-4">
             <DialogTitle>Edit product</DialogTitle>
           </DialogHeader>
-          {editingProduct && (
+          {editingProduct && isLoadingSkus && (
+            <p className="px-6 py-4 text-sm text-muted-foreground">Loading variants...</p>
+          )}
+          {editingProduct && !isLoadingSkus && (
             <ProductForm
               initialValues={editingProduct}
+              initialSkus={editingSkus}
               onSubmit={handleEditSubmit}
               onCancel={() => setIsDialogOpen(false)}
-              isSubmitting={updateProduct.isPending}
+              isSubmitting={updateProduct.isPending || saveSkus.isPending}
             />
           )}
         </DialogContent>

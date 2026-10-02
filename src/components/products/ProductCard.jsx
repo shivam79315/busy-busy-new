@@ -50,10 +50,19 @@ export const ProductCard = ({ product, index, onAddToCart, onAddToWishlist }) =>
         </div>
 
         <div className="grid grid-cols-[1fr_auto] gap-2">
-          <Button className="h-10 cursor-pointer rounded-full" onClick={() => onAddToCart(product.productId)} data-testid={`product-add-cart-${product.productId}`}>
-            <ShoppingCart className="mr-1 h-4 w-4" />
-            Add to Cart
-          </Button>
+          {product.variants?.length > 0 ? (
+            <Button asChild className="h-10 cursor-pointer rounded-full" data-testid={`product-add-cart-${product.productId}`}>
+              <Link to={`/products/${product.productId}`}>
+                <ShoppingCart className="mr-1 h-4 w-4" />
+                Select options
+              </Link>
+            </Button>
+          ) : (
+            <Button className="h-10 cursor-pointer rounded-full" onClick={() => onAddToCart(product.productId)} data-testid={`product-add-cart-${product.productId}`}>
+              <ShoppingCart className="mr-1 h-4 w-4" />
+              Add to Cart
+            </Button>
+          )}
           <Button variant="outline" size="icon" className="h-10 w-10 cursor-pointer rounded-full" onClick={() => onAddToWishlist(product.productId)} data-testid={`product-add-wishlist-${product.productId}`}>
             <Heart className="h-4 w-4" />
           </Button>

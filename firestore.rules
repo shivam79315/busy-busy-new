@@ -28,6 +28,13 @@ service cloud.firestore {
           && request.resource.data.uid == reviewId;
         allow delete: if isAdmin() || (isSignedIn() && request.auth.uid == reviewId);
       }
+
+      // Per-variant-combination stock. Decremented server-side by
+      // busy-busy-backend's Admin SDK after a paid order, which bypasses rules.
+      match /skus/{skuId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
     }
 
     match /heroSlides/{slideId} {
