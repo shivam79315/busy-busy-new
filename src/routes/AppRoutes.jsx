@@ -4,9 +4,11 @@ import ProductDetailPage from "@/pages/ProductDetailPage";
 import ProductsPage from "@/pages/ProductsPage";
 import RegisterPage from "@/pages/RegisterPage";
 import ProtectedRoute from "./ProtectedRoute";
+import AdminRoute from "./AdminRoute";
 import CartPage from "@/pages/CartPage";
 import WishlistPage from "@/pages/WishlistPage";
 import OrdersPage from "@/pages/OrdersPage";
+import AdminPage from "@/pages/AdminPage";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 const AppRoutes = () => (
@@ -38,6 +40,14 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <OrdersPage />
         </ProtectedRoute>
+      )}
+    />
+    <Route
+      path="/admin"
+      element={(
+        <AdminRoute>
+          <AdminPage />
+        </AdminRoute>
       )}
     />
     <Route path="*" element={<Navigate to="/" replace />} />

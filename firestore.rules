@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == "admin@example.com";
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      // Non-admins may only update reviewSummary (written after a review submit).
+      allow update: if isAdmin()
+        || (isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["reviewSummary"]));
+
+      match /reviews/{reviewId} {
+        allow read: if true;
+        allow create, update: if isSignedIn()
+          && request.auth.uid == reviewId
+          && request.resource.data.uid == reviewId;
+        allow delete: if isAdmin() || (isSignedIn() && request.auth.uid == reviewId);
+      }
+    }
+
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /cart/{productId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /wishlist/{productId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      match /orders/{orderId} {
+        allow read: if isOwner(uid);
+        // Orders are written server-side by busy-busy-backend via the Admin SDK,
+        // which bypasses rules entirely, so client writes stay closed.
+        allow write: if false;
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,8 +1,8 @@
-import { ArrowRight, ShieldCheck, Sparkles, Truck, WandSparkles } from "lucide-react";
+import { ShieldCheck, Truck, WandSparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
-import { useAuth } from "@/context/AuthContext";
+import HeroCarousel from "@/components/home/HeroCarousel";
 
 const categoryHighlights = [
   {
@@ -75,42 +75,9 @@ const editorialPicks = [
 ];
 
 export default function HomePage() {
-
-  const {user} = useAuth();
-
   return (
     <div className="space-y-20 pb-6" data-testid="home-page">
-      <section className="hero-fade-up relative overflow-hidden rounded-[2.2rem] border border-border/70 bg-card/70 px-6 py-16 shadow-2xl shadow-primary/10 backdrop-blur-xl md:px-14 md:py-24" data-testid="home-hero-section">
-        <div className="float-gentle absolute -right-16 top-0 h-48 w-48 rounded-full bg-primary/15 blur-3xl" />
-        <div className="pulse-soft absolute -bottom-14 left-0 h-44 w-44 rounded-full bg-primary/10 blur-3xl" />
-
-        <div className="relative z-10 max-w-3xl space-y-8">
-          <span className="hero-fade-up delay-1 inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-4 py-2 text-xs font-medium text-muted-foreground" data-testid="home-hero-badge">
-            <Sparkles className="h-4 w-4 text-primary" />
-            Neo-Natural shopping experience
-          </span>
-          <h1 className="hero-fade-up delay-2 text-4xl font-bold leading-tight text-foreground sm:text-5xl lg:text-6xl" data-testid="home-hero-title">
-            Shop modern essentials with a refined and calm visual flow.
-          </h1>
-          <p className="hero-fade-up delay-3 max-w-2xl text-sm text-muted-foreground md:text-lg" data-testid="home-hero-description">
-            Discover curated products in audio, footwear, watches, and skincare—built for users who want elegant design and frictionless checkout.
-          </p>
-
-          <div className="hero-fade-up delay-3 flex flex-wrap items-center gap-3" data-testid="home-hero-actions">
-            <Button asChild className="h-11 rounded-full px-6" data-testid="home-shop-now-button">
-              <Link to="/products">
-                Shop now
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-            {!user && (
-            <Button asChild variant="outline" className="h-11 rounded-full px-6" data-testid="home-create-account-button">
-              <Link to="/register">Create account</Link>
-            </Button>
-            )}
-          </div>
-        </div>
-      </section>
+      <HeroCarousel />
 
       <section className="home-section-reveal grid grid-cols-2 gap-4 rounded-3xl border border-border/60 bg-card/70 p-6 md:grid-cols-4" style={{ animationDelay: "0.1s" }} data-testid="home-stats-section">
         {quickStats.map((stat, index) => (
