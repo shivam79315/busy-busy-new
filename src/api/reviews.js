@@ -39,9 +39,6 @@ const deriveSummary = (reviews) => {
   return { totalCount, ratingSum, starCounts, average, recommendationPercent, breakdown };
 };
 
-// Recomputed from the reviews subcollection (the source of truth) rather than
-// maintained as a running counter, so it can't drift or accumulate corruption
-// from a legacy/partial reviewSummary shape on the product doc.
 async function refreshReviewSummary(productId) {
   const snapshot = await getDocs(collection(db, "products", productId, "reviews"));
   const reviews = snapshot.docs.map((docSnap) => docSnap.data());
