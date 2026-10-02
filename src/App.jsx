@@ -25,7 +25,7 @@ function App() {
             />
             <Navbar />
             <main
-              className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-36 sm:px-6 md:px-10 md:pt-28"
+              className="relative z-10 mx-auto max-w-7xl px-2 sm:px-0 pb-20 pt-36 md:pt-28"
               data-testid="app-main-content"
             >
               <AppRoutes />

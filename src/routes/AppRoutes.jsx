@@ -8,7 +8,7 @@ import AdminRoute from "./AdminRoute";
 import CartPage from "@/pages/CartPage";
 import WishlistPage from "@/pages/WishlistPage";
 import OrdersPage from "@/pages/OrdersPage";
-import AdminPage from "@/pages/AdminPage";
+import AdminRoutes from "./AdminRoutes";
 import { Navigate, Route, Routes } from "react-router-dom";
 
 const AppRoutes = () => (
@@ -43,10 +43,10 @@ const AppRoutes = () => (
       )}
     />
     <Route
-      path="/admin"
+      path="/admin/*"
       element={(
         <AdminRoute>
-          <AdminPage />
+          <AdminRoutes />
         </AdminRoute>
       )}
     />

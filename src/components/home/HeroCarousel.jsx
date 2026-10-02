@@ -4,55 +4,44 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { cn } from "@/lib/utils";
+import { useHeroSlides } from "@/hooks/useHeroSlides";
 
 import heroBg from "@/assets/products/hero-bg.png";
-import whiteShoe from "@/assets/products/verdant-w-g.png";
-import blackShoe from "@/assets/products/black.png";
-import cremeShoe from "@/assets/products/creme-45-deg.png";
-import greenShoe from "@/assets/products/green-white-diagonal.png";
-
-const slides = [
-  {
-    id: "white",
-    badge: "New Arrivals",
-    title: "Clean Slate",
-    description: "A minimal white colorway built for everyday wear, from desk to street.",
-    image: whiteShoe,
-  },
-  {
-    id: "black",
-    badge: "Best Seller",
-    title: "Midnight Edition",
-    description: "Understated black tones with a low-key finish that goes with everything.",
-    image: blackShoe,
-  },
-  {
-    id: "creme",
-    badge: "Staff Pick",
-    title: "Desert Creme",
-    description: "Warm neutral tones and a soft, premium finish for a calmer look.",
-    image: cremeShoe,
-  },
-  {
-    id: "green",
-    badge: "Limited Drop",
-    title: "Forest Line",
-    description: "Bold green detailing that matches the VerdantCart palette, made to stand out.",
-    image: greenShoe,
-  },
-];
 
 export default function HeroCarousel() {
+  const { data: slides, isLoading } = useHeroSlides();
+
   const [api, setApi] = useState(null);
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
 
   useEffect(() => {
     if (!api) return;
-    setCount(api.scrollSnapList().length);
-    setCurrent(api.selectedScrollSnap());
-    api.on("select", () => setCurrent(api.selectedScrollSnap()));
+
+    const sync = () => {
+      setCount(api.scrollSnapList().length);
+      setCurrent(api.selectedScrollSnap());
+    };
+
+    sync();
+    api.on("select", sync);
+    api.on("reInit", sync);
+
+    return () => {
+      api.off("select", sync);
+      api.off("reInit", sync);
+    };
   }, [api]);
+
+  if (isLoading) {
+    return (
+      <section className="hero-fade-up min-h-[520px] animate-pulse rounded-[2.2rem] border border-border/70 bg-card/40 md:min-h-[600px]" data-testid="home-hero-section" />
+    );
+  }
+
+  if (!slides?.length) {
+    return null;
+  }
 
   return (
     <section className="hero-fade-up relative isolate min-h-[520px] overflow-hidden rounded-[2.2rem] border border-border/70 px-6 py-12 shadow-2xl shadow-primary/10 md:min-h-[600px] md:px-14 md:py-16" data-testid="home-hero-section">
@@ -89,7 +78,7 @@ export default function HeroCarousel() {
 
                 <div className="pointer-events-none relative h-64 w-full sm:h-80 lg:h-[26rem]">
                   <img
-                    src={slide.image}
+                    src={slide.imageUrl}
                     alt={slide.title}
                     className="absolute bottom-[20%] left-[4%] w-[100%] max-w-xs object-contain mix-blend-screen drop-shadow-2xl sm:right-[0%] sm:max-w-md lg:left-[-5%]"
                   />

@@ -1,4 +1,4 @@
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, query, updateDoc, where } from "firebase/firestore";
 import { db } from "./firebase";
 
 export async function fetchProducts() {
@@ -18,6 +18,14 @@ export async function getProductById(productId) {
 
   const snapshot = await getDocs(q);
   return snapshot.docs[0].data();
+}
+
+export async function updateProduct(id, data) {
+  await updateDoc(doc(db, "products", id), data);
+}
+
+export async function deleteProduct(id) {
+  await deleteDoc(doc(db, "products", id));
 }
 
 export async function fetchProductsByIds(productIds) {

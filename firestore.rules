@@ -7,7 +7,7 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.token.email == "admin@example.com";
+      return isSignedIn() && request.auth.token.email == "shivamsahotra3@gmail.com";
     }
 
     function isOwner(uid) {
@@ -28,6 +28,11 @@ service cloud.firestore {
           && request.resource.data.uid == reviewId;
         allow delete: if isAdmin() || (isSignedIn() && request.auth.uid == reviewId);
       }
+    }
+
+    match /heroSlides/{slideId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /users/{uid} {
