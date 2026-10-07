@@ -177,7 +177,7 @@ export default function ProductDetailPage() {
                     <img
                       src={img}
                       alt={`${product.title} ${index + 1}`}
-                      className="h-full w-full object-cover object-center"
+                      className="h-full w-full object-contain object-center"
                       onError={() => {
                         setHiddenImages((prev) => new Set(prev).add(img));
                         emblaApi?.scrollNext();

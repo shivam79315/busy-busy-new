@@ -7,6 +7,7 @@ import {
   orderBy,
   query,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -37,4 +38,12 @@ export async function updateHeroSlide(id, data) {
 
 export async function deleteHeroSlide(id) {
   await deleteDoc(doc(db, "heroSlides", id));
+}
+
+export async function reorderHeroSlides(orderedIds) {
+  const batch = writeBatch(db);
+  orderedIds.forEach((id, index) => {
+    batch.update(doc(db, "heroSlides", id), { order: index });
+  });
+  await batch.commit();
 }

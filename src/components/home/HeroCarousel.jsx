@@ -65,13 +65,13 @@ export default function HeroCarousel() {
                   </p>
                   <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                     <Button asChild className="h-11 rounded-full px-6">
-                      <Link to="/products">
+                      <Link to={slide.productId ? `/products/${slide.productId}` : "/products"}>
                         Shop now
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
                     <Button asChild variant="outline" className="h-11 rounded-full border-white/20 bg-transparent px-6 text-white hover:bg-white/10 hover:text-white">
-                      <Link to="/products">Explore collection</Link>
+                      <Link to={slide.productId ? `/products/${slide.productId}` : "/products"}>Explore collection</Link>
                     </Button>
                   </div>
                 </div>

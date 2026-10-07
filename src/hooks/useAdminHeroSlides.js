@@ -3,6 +3,7 @@ import {
   createHeroSlide,
   deleteHeroSlide,
   fetchAllHeroSlides,
+  reorderHeroSlides,
   updateHeroSlide,
 } from "@/api/hero";
 
@@ -38,6 +39,14 @@ export function useDeleteHeroSlide() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deleteHeroSlide,
+    onSuccess: () => invalidateHeroQueries(queryClient),
+  });
+}
+
+export function useReorderHeroSlides() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: reorderHeroSlides,
     onSuccess: () => invalidateHeroQueries(queryClient),
   });
 }
