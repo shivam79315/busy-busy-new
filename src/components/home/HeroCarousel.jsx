@@ -6,7 +6,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { cn } from "@/lib/utils";
 import { useHeroSlides } from "@/hooks/useHeroSlides";
 
-import heroBg from "@/assets/products/hero-bg.png";
+import heroBg from "@/assets/hero-bg.png";
 
 export default function HeroCarousel() {
   const { data: slides, isLoading } = useHeroSlides();
